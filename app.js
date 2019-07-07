@@ -18,7 +18,7 @@
 // [START gae_node_request_example]
 const express = require('express');
 var cookieParser = require('cookie-parser');
-var session = require('express-session');
+var session = require('cookie-session');
 
 const app = express();
 var path = require('path');
@@ -36,9 +36,11 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        expires: 600000
+        maxAge: 600000  // 10 minutes I think
     }
 }));
+var db = require("./db.js");
+
 // This middleware will check if user's cookie is still saved in browser and user is not set, 
 // then automatically log the user out.
 // This usually happens when you stop your express server after login, 
@@ -55,21 +57,39 @@ var sessionChecker = (req, res, next) => {
     console.log("sessionChecker(): Checking cookies: " + JSON.stringify(req.cookies));
     if (req.session.user && req.cookies.mcduck_bank) {
         console.log("sessionChecker(): " + JSON.stringify(req.session.user));
-        res.redirect('/account');
+        var id = req.session.user.id;
+        console.log("sessionChecker() id=" + id);
+        
     } else {
         console.log("sessionChecker(): NOT!");
         res.sendFile(path.join(__dirname + '/public/login.html'));
-
-        //        next();
+    //        next();
     }    
 };
 
-var db = require("./db.js");
 
 //-------------------------------------------------------------------
 
-app.get('/', sessionChecker, (req, res) => {
-    res.sendFile(path.join(__dirname + '/public/login.html'));
+app.get('/', (req, res) => {
+    console.log("HTTP GET / ");
+
+    if (req.session.user && req.cookies.mcduck_bank) {
+        console.log("app.get(/): " + JSON.stringify(req.session.user));
+        var id = req.session.user.id;
+        console.log("app.get(/) id=" + id);
+        
+        if (id == 0) {
+            console.log("app.get(/) Send to Admin");
+            res.redirect('/admin');
+        } else {
+            console.log("app.get(/) Send to Account");
+            res.redirect('/account');
+        }
+    } else {
+        console.log("/: no valid user or cookie");
+        res.sendFile(path.join(__dirname + '/public/login.html'));
+    }
+
 });
 
 // route for user logout
@@ -78,7 +98,7 @@ app.get('/logout', (req, res) => {
         res.clearCookie('mcduck_bank');
         res.redirect('/');
     } else {
-        res.redirect('/login');
+        res.sendFile(path.join(__dirname + '/public/login.html'));
     }
 });
 
@@ -110,6 +130,7 @@ app.get('/transactiontypes', (req,res) => {
     });
     */
 });
+
 app.get('/getaccounts', (req,res) => {
     // TODO check for API auth
     console.log("/accounttypes GET START");
@@ -130,8 +151,28 @@ app.get('/getaccounts', (req,res) => {
     */
 });
 
-app.get('/fakelogin0', (req,res) => {
-    console.log("Creating a fake session for UID 0");
+app.get('/getaccountstable', (req,res) => {
+    // TODO check for API auth
+    console.log("/accounttypes GET START");
+    res.setHeader('Content-Type', 'application/json');
+    
+    /*var table = {};
+    var key = "data";
+    var array = [];
+    array.push({account: "1", name: "McDuck", balance: "$51.50" });
+    array.push({account: "2", name: "Pokey", balance: "$4.20" });
+    table[key] = array;
+    res.json(table);*/
+
+    db.getAccounts( function(result) {
+        res.setHeader('Content-Type', 'application/json');
+        res.json(result);
+    }); 
+});
+
+
+app.get('/fakelogin', (req,res) => {
+    console.log("Creating a fake session for: " + req.body );
     var userSession = "{\"id\": 0, \"name\":\"Admin\" }";
     req.session.user = JSON.parse(userSession);
     res.redirect("/");
@@ -151,6 +192,8 @@ app.post('/login', urlencodedParser, function(req,res) {
             res.status(200).send('LOGIN FAILED');
         }
         else {
+            console.log("Creating a new session for: " + account );
+            req.session.user = { id: account, name: "TBD" };
             res.redirect("/");
         }
     });   
@@ -167,20 +210,45 @@ app.post('/postTransaction', urlencodedParser, function(req,res) {
     console.log("Account = "+ account +", transaction="+ transaction + " amount=" + amount );
 });
 
-app.get('/admin', sessionChecker, function(req, res) {
-/*    
+app.post('/newaccount', urlencodedParser, function(req,res) {
+    //bearer check
+    console.log("/newaccount: POST START");
+    console.dir(req.body);
+    var name = req.body.name;
+    var pin = req.body.pin;
+    var email = req.body.email;
+    
+    console.log("/newaccount Received Name = "+ name +", pin="+ pin + " email=" + email );
+
+    var row = [];
+    row.push({"account_id": 3, "name": name, "pin": parseInt(pin), "email": email, "date_created": "2019-07-06"});
+    db.insertAccount(row, function (result) {
+        console.log('/newaccount: ${result}');
+    });
+    res.redirect("/admin");
+});
+
+app.get('/admin', function(req, res) {
+
     if (req.session.user && req.cookies.mcduck_bank) {
-        res.sendFile(__dirname + '/public/dashboard.html');
+        console.log("/admin: Valid Request");
+        res.sendFile(path.join(__dirname + '/secure/admin.html'));
     } else {
-        res.redirect('/login');
+        console.log("/admin: No Valid User or Cookie");
+        res.sendFile(path.join(__dirname + '/public/login.html'));
     }
-*/
-    res.sendFile(path.join(__dirname + '/secure/admin.html'));
+
 });
 
 app.get('/account', function(req, res) {
-    //check for login
-    res.sendFile(path.join(__dirname + '/secure/account.html'));
+
+    if (req.session.user && req.cookies.mcduck_bank) {
+        res.sendFile(path.join(__dirname + '/secure/account.html'));
+
+    } else {
+        res.sendFile(path.join(__dirname + '/public/login.html'));
+
+    }
 
 });
 

@@ -8,6 +8,132 @@ exports.sumThree = function(){
     return 2+2+2; 
   };
 
+exports.insertAccount = async function (row, callback) {
+    console.log("db.insertAccount(): BEGIN with " +JSON.stringify(row) );
+
+    const bigquery = new BigQuery();
+    const options = {
+        ignoreUnknownValues: true,
+        raw: false
+      };
+    // Insert data into a table
+    try {
+        var id = 0;
+        
+        
+        getNewAccountID( function(result) { 
+            id = result;
+            if ( id == 0) {
+                console.log("insertAccount(): Didn't get a new ID");
+                callback("ERROR");
+            }
+            row[0].account_id = id;
+            console.log("db.insertAccount(): About to Insert " +JSON.stringify(row) );
+    
+            bigquery.dataset("bankdata").table("accounts").insert(row, options).catch(err => {
+                if (err && err.name === 'PartialFailureError') {
+                    if (err.errors && err.errors.length > 0) {
+                        console.log('insertAccount() Insert errors:');
+                        err.errors.forEach(err => console.error(err));
+                    }
+                } else {
+                    console.error('insertAccount() ERROR:', err);
+                }
+            });
+            console.log(`db.insertAccount(): Likely inserted ${row.length} rows`);
+            callback("done");        
+        });    
+    } catch (error) {
+        console.error("insertAccount() ERROR: " + error);
+        callback("ERROR");
+    }
+    console.log("db.insertAccount(): END");
+};
+
+exports.insertTransaction = async function (row, callback) {
+    console.log("db.insertTransaction(): BEGIN with " +JSON.stringify(row) );
+
+    const bigquery = new BigQuery();
+    const options = {
+        ignoreUnknownValues: true,
+        raw: false
+      };
+    // Insert data into a table
+    try {
+        var id = 0;
+        
+        
+        getNewTransactionID( function(result) { 
+            id = result;
+            if ( id == 0) {
+                console.log("insertTransaction(): Didn't get a new ID");
+                callback("ERROR");
+            }
+            row[0].account_id = id;
+            console.log("insertTransaction(): About to Insert " +JSON.stringify(row) );
+    
+            bigquery.dataset("bankdata").table("transactions").insert(row, options).catch(err => {
+                if (err && err.name === 'PartialFailureError') {
+                    if (err.errors && err.errors.length > 0) {
+                        console.log('insertTransaction() Insert errors:');
+                        err.errors.forEach(err => console.error(err));
+                    }
+                } else {
+                    console.error('insertTransaction() ERROR:', err);
+                }
+            });
+            console.log(`insertTransaction(): Likely inserted ${row.length} rows`);
+            callback("done");        
+        });    
+    } catch (error) {
+        console.error("insertTransaction() ERROR: " + error);
+        callback("ERROR");
+    }
+    console.log("insertTransaction(): END");
+};
+
+
+
+getNewAccountID = async function(callback) {
+    console.log("getNewAccountID() BEGIN");
+    const bigqueryClient = new BigQuery();
+    const query = "SELECT MAX(account_id) AS ID FROM bankdata.accounts";
+    const options = { query: query, location: 'US' };
+    const [job] = await bigqueryClient.createQueryJob(options);
+    console.log(`getTransactionTypes(): Job ${job.id} started.`);
+    const [rows] = await job.getQueryResults();
+
+    var id = 0;
+    rows.forEach(row => {
+        console.log("getNewAccountID(): row=" + JSON.stringify(row) );
+        id = parseInt(row.ID);
+        id++;
+        console.log("getNewAccountID(): Returning " + id);
+        callback(id);
+    });
+};
+
+getNewTransactionID = async function(callback) {
+    console.log("getNewAccountID() BEGIN");
+    const bigqueryClient = new BigQuery();
+    const query = "SELECT MAX(transaction_id) AS ID FROM bankdata.transactions";
+    const options = { query: query, location: 'US' };
+    const [job] = await bigqueryClient.createQueryJob(options);
+    console.log(`getTransactionTypes(): Job ${job.id} started.`);
+    const [rows] = await job.getQueryResults();
+
+    var id = 0;
+    rows.forEach(row => {
+        console.log("getNewAccountID(): row=" + JSON.stringify(row) );
+        id = parseInt(row.ID);
+        id++;
+        console.log("getNewAccountID(): Returning " + id);
+        callback(id);
+    });
+    console.log("getNewTransactionID(): No Transactions Exist, First will be 1");
+    callback(1);
+};
+
 exports.getTransactionTypes = async function(callback) {
     console.log("db.getTransactionTypes(): BEGIN");
     const bigqueryClient = new BigQuery();
@@ -23,6 +149,31 @@ exports.getTransactionTypes = async function(callback) {
     });
     callback(result);
 };
+
+exports.getAccounts = async function(callback) {
+    console.log("db.getAccounts(): BEGIN");
+    const bigqueryClient = new BigQuery();
+    const query = "SELECT * FROM bankdata.accounts";
+    const options = { query: query, location: 'US' };
+    const [job] = await bigqueryClient.createQueryJob(options);
+    console.log(`getAccounts(): Job ${job.id} started.`);
+    const [rows] = await job.getQueryResults();
+
+    var table = {};
+    var key = "data";
+    var array = [];
+    
+    try {
+        rows.forEach(row => {
+            array.push({account: row.account_id, name: row.name, balance: "TBD"});
+        });
+        table[key] = array;
+        callback(table);    
+    } catch (error) {
+        console.error("getAccounts() ${error} ");
+        callback(" ");
+    }
+}
 
 exports.validateLogin = async function(account, pin, callback) {
 
@@ -44,21 +195,18 @@ exports.validateLogin = async function(account, pin, callback) {
     // Wait for the query to finish
     const [rows] = await job.getQueryResults();
 
-    // Print the results
-    console.log('Query Succeeded');
-
     if (rows.length == 0) {
-        console.log("NO ACCOUNT EXISTS for " + account);
+        console.log("validateLogin(): NO ACCOUNT EXISTS for " + account);
         callback(false);
     } else {
 
         rows.forEach(row => {
-            console.log(row);
+            console.log("validateLogin():" + row);
             if (row.pin == pin) {
-                console.log("VALID LOGIN for " + account);
+                console.log("validateLogin(): VALID LOGIN for " + account);
                 callback(true);
             } else {
-                console.log("WRONG PIN for " + account);
+                console.log("validateLogin(): WRONG PIN for " + account);
                 callback(false);
             }
         });

@@ -30,6 +30,7 @@ app.use('/public', express.static('public'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+
 app.use(session({
     key: 'mcduck_bank',
     secret: 'ikn0wsom3th1ngy0ud0ntkn0w',
@@ -109,51 +110,51 @@ app.use(function (req, res, next) {
 });
 */
 
-app.get('/transactiontypes', (req,res) => {
-
+app.get('/balance', (req,res) => {
     // check for API auth
 
+    if (req.session.user && req.cookies.mcduck_bank) {
+        var id = req.session.user.id;
+        db.getBalance( function(id, result) {
+            //res.setHeader('Content-Type', 'application/json');
+            res.send( result );
+        });
+    
+
+    } else {
+        res.sendFile(path.join(__dirname + '/public/login.html'));
+    }    
+    
+});
+
+app.get('/transactiontypes', (req,res) => {
+    // check for API auth
     console.log("/transactiontypes GET START");
-
-    res.setHeader('Content-Type', 'application/json');
-
+    /*res.setHeader('Content-Type', 'application/json');
     var type = "[{ \"id\": 0,\"name\": \"Deposit\" },{\"id\": 1, \"name\": \"Withdrawl\"}]";
+    res.json(type);*/
 
-    res.json(type);
-    
-/*
     db.getTransactionTypes( function(result) {
-
         res.setHeader('Content-Type', 'application/json');
-        res.end(result);
-    
+        res.json( JSON.stringify(result) );
     });
-    */
 });
 
 app.get('/getaccounts', (req,res) => {
     // TODO check for API auth
     console.log("/accounttypes GET START");
-
-    res.setHeader('Content-Type', 'application/json');
-
+    /*res.setHeader('Content-Type', 'application/json');
     var type = "[{ \"account\": 1,\"name\": \"McDuck\" },{\"id\": 2, \"name\": \"Pokey\"}]";
-
-    res.json(type);
-    
-/*
-    db.getTransactionTypes( function(result) {
-
+    res.json(type);*/
+    db.getAccounts( function(result) {
         res.setHeader('Content-Type', 'application/json');
-        res.end(result);
-    
+        res.json( JSON.stringify(result.data) );
     });
-    */
 });
 
 app.get('/getaccountstable', (req,res) => {
     // TODO check for API auth
-    console.log("/accounttypes GET START");
+    console.log("/accounttypestable GET START");
     res.setHeader('Content-Type', 'application/json');
     
     /*var table = {};
@@ -203,11 +204,24 @@ app.post('/postTransaction', urlencodedParser, function(req,res) {
     //bearer check
     console.log("/postTransaction: POST START");
     console.dir(req.body);
+
     var account = req.body.account;
     var transaction = req.body.transaction;
-    var amount = req.body.amount;
-    
-    console.log("Account = "+ account +", transaction="+ transaction + " amount=" + amount );
+    var amount = req.body.amount;    
+    var dateFormat = require('dateformat');
+    var day=dateFormat(new Date(), "yyyy-mm-dd");
+
+    console.log("/postTransaction(): Account = "+ account +", transaction="+ transaction + " amount=" + amount );
+
+    // TODO made sure fees/withdraw are negative
+    var row = [];
+    row.push({"account_id": account,"transaction_date": day, "transaction_type_id": transaction, "amount": parseFloat(amount)});
+
+    db.insertTransaction(row, function (result) {
+        console.log('/postTransaction() DB returned: ' + result);
+    });
+    res.redirect("/admin");
+    res.end();
 });
 
 app.post('/newaccount', urlencodedParser, function(req,res) {
@@ -217,11 +231,13 @@ app.post('/newaccount', urlencodedParser, function(req,res) {
     var name = req.body.name;
     var pin = req.body.pin;
     var email = req.body.email;
-    
+    var dateFormat = require('dateformat');
+    var day=dateFormat(new Date(), "yyyy-mm-dd");
+   
     console.log("/newaccount Received Name = "+ name +", pin="+ pin + " email=" + email );
 
     var row = [];
-    row.push({"account_id": 3, "name": name, "pin": parseInt(pin), "email": email, "date_created": "2019-07-06"});
+    row.push({"account_id": 0, "name": name, "pin": parseInt(pin), "email": email, "date_created": day});
     db.insertAccount(row, function (result) {
         console.log('/newaccount: ${result}');
     });

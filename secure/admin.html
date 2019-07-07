@@ -75,7 +75,7 @@
               <div class="col-md-4">
                 <div class="form-group">
                   <label for="exampleFormControlSelect2">Choose Account</label>
-                  <select class="form-control" id="exampleFormControlSelect2">
+                  <select class="form-control" id="exampleFormControlSelect2" name="account">
                     <option id="1">Loading...</option>
                   </select>
                 </div>
@@ -85,8 +85,8 @@
               <div class="col-md-2" align="center"><strong>Transaction Type</strong></div>
               <div class="col-md-4">
                 <div class="form-group">
-                  <label for="exampleFormControlSelect1">Example select</label>
-                  <select class="form-control" id="exampleFormControlSelect1">
+                  <label for="exampleFormControlSelect1"></label>
+                  <select class="form-control" id="exampleFormControlSelect1" name="transaction">
                     <option id="1">Loading...</option>
                   </select>
                 </div>
@@ -94,7 +94,9 @@
             </div> <!--row-->          
             <div class="row">
               <div class="col-md-2" align="center"><strong>Amount</strong></div>
-              <div class="col-md-4"><input type="text" id="amount" name="amount" class="form-control" placeholder="Amount" required autofocus></div>
+              <div class="col-md-4">
+                <label>Use Negatives for Withdraw/Fee</label>
+                <input type="text" id="amount" name="amount" class="form-control" placeholder="Amount" required autofocus></div>
             </div>          
             <div class="row">
                         <button class="btn btn-primary" type="submit">Submit</button>
@@ -184,10 +186,10 @@
       url = '/transactiontypes';
 
       $.getJSON(url, function (data) {
-        console.log("Return: " + JSON.stringify(data));
+        console.log("Calling /transactiontypes returns: " + JSON.stringify(data));
         $.each( JSON.parse(data), function (key, entry) {
-          // <a class="dropdown-item" href="#">Action</a>
-          dropdown.append($('<option></option>').attr('value', entry.transactiontypeid).text(entry.name));
+          // <a class="dropdown-item" href="#">Action</a> 
+          dropdown.append($('<option></option>').attr('value', entry.id).text(entry.name));
         })
       });
 
@@ -198,10 +200,10 @@
       url = '/getaccounts';
 
       $.getJSON(url, function (data) {
-        console.log("Return: " + JSON.stringify(data));
+        console.log("Calling /getaccounts returns: " + JSON.stringify(data));
         $.each( JSON.parse(data), function (key, entry) {
           // <a class="dropdown-item" href="#">Action</a>
-          dropdown2.append($('<option></option>').attr('value', entry.transactiontypeid).text(entry.name));
+          dropdown2.append($('<option></option>').attr('value', entry.account).text(entry.name));
         })
       });
 

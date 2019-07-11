@@ -18,6 +18,7 @@ bq load --source_format=CSV --skip_leading_rows=1 bankdata.accounts load_account
 bq load --source_format=CSV --skip_leading_rows=1 bankdata.transactions trans.csv transaction_id:INTEGER,account_id:INTEGER,transaction_type_id:INTEGER,amount:NUMERIC,transaction_date:DATETIME
 
 # TO-DO LIST
+- Config Object: Bank Name, 
 - https://cloud.google.com/scheduler/
 - https://cloud.google.com/appengine/docs/standard/nodejs/sending-emails-with-sendgrid
 - https://console.cloud.google.com/marketplace/details/sendgrid-app/sendgrid-email?project=mcduck-bank&folder&organizationId

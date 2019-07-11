@@ -8,7 +8,7 @@
     <meta name="author" content="">
     <link rel="icon" href="/docs/4.0/assets/img/favicons/favicon.ico">
 
-    <title>Sticky Footer Navbar Template for Bootstrap</title>
+    <title>Account Details - McDuck Bank</title>
 
     <link rel="canonical" href="https://getbootstrap.com/docs/4.0/examples/sticky-footer-navbar/">
 
@@ -34,7 +34,7 @@
               <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">Log Out</a>
+              <a class="nav-link" href="/logout">Log Out</a>
             </li>
             <li class="nav-item">
               <a class="nav-link disabled" href="#">Disabled</a>
@@ -51,10 +51,10 @@
     <!-- Begin page content -->
     <main role="main" class="container">
       <h1 class="mt-5">Welcome to McDuck Savings and Loan</h1>
-      <p class="lead">Account Balance: $0.00</p>
-      <p class="lead">Interest Paid: $0.00</p>
+      <p class="lead">Account Balance: $<span id="txtBalance">0.00</span></p>
+      <p class="lead">Interest Paid: $<span id="txtInterest">0.00</span></p>
       <div>
-        <table id="example" class="display" cellspacing="0" width="100%">
+        <table id="transactionsTable" class="display" cellspacing="0" width="100%">
             <thead>
                 <tr>
                     <th>Date</th>
@@ -84,9 +84,32 @@
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script> 
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"  crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.bundle.js"  crossorigin="anonymous"></script> 
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.js"></script>
         
+    <script>
+      console.log("Getting Balance/Interest");
+      $.getJSON('/balance', function (data) {
+        console.log("Balance returns " + data);        
+        var jsdata = JSON.parse(data);
+        $('#txtBalance').text( jsdata.balance );
+        $('#txtInterest').text( jsdata.interest );
+      });
+
+      $(document).ready( function () {
+        $('#transactionsTable').DataTable({
+          paging: false,
+          searching: false,
+          ajaxSource:"/gettransactionstable",
+          columns: [
+            { "data": "date" },
+            { "data": "type"},
+            { "data" : "amount"}
+          ]
+          }); 
+      } );
+
+    </script>
   </body>
 </html>

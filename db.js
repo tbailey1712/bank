@@ -136,28 +136,54 @@ getNewTransactionID = async function(callback) {
  
 };
 
-exports.getBalance = async function(account_id, callback) {
+exports.getBalances = async function(account_id, callback) {
 
-    console.log("db.getBalance(" + account_id + ") BEGIN");
-    const bigqueryClient = new BigQuery();
-    var balance = 0.0;
+    console.log("db.getBalances(" + account_id + ") BEGIN");
+    try {
+        const bigqueryClient = new BigQuery();
+        var balance = 0.0;
+        var interest = 4.20;
+        
+        var query = "SELECT SUM(amount) as amount FROM bankdata.transactions ";
     
-    var query = "SELECT SUM(amount) as amount FROM bankdata.transactions ";
+        if (account_id != 0) {
+            query += "WHERE account_id = " + account_id;
+        }
+        var options = { query: query, location: 'US' };
+        var [job] = await bigqueryClient.createQueryJob(options);
+        console.log(`getBalances(): Job ${job.id} started with SQL: ` + query);
+        var [rows] = await job.getQueryResults();
+    
+        if (rows.length == 1) {
+            console.log("db.getBalances() Balance Returned " + JSON.stringify(rows));
+            balance = parseFloat( rows[0].amount );
+        }
 
-    if (account_id != 0) {
-        query += "WHERE account_id = " + account_id;
-    }
-    const options = { query: query, location: 'US' };
-    const [job] = await bigqueryClient.createQueryJob(options);
-    console.log(`getBalance(): Job ${job.id} started with SQL: ` + query);
-    const [rows] = await job.getQueryResults();
+        var query = "SELECT SUM(amount) as amount FROM bankdata.transactions ";
+    
+        if (account_id != 0) {
+            query += "WHERE transaction_type_id = 4 AND account_id = " + account_id;
+        } else {
+            query += "WHERE transaction_type_id = 4";
+        }
+        var options2 = { query: query, location: 'US' };
+        [job2] = await bigqueryClient.createQueryJob(options2);
+        console.log(`getBalances(): Job ${job2.id} started with SQL: ` + query);
+        [rows2] = await job2.getQueryResults();
+    
+        if (rows2.length == 1) {
+            console.log("db.getBalances() Interest Returned " + JSON.stringify(rows2));
+            interest = parseFloat( rows2[0].amount );
+        }
 
-    if (rows.length == 1) {
-        balance = rows[0].row.amount;
-        console.log("db.getBalance() Returned " + balance);
+        var result = {balance: balance, interest: interest};
+        callback(result);
+    } catch (error) {
+        console.error("db.getBalances() ERROR: " + error);
+        callback({amount: "error", interest: "error"});
     }
-    callback(balance);
-}
+ 
+};
 
 exports.getTransactionTypes = async function(callback) {
     console.log("db.getTransactionTypes(): BEGIN");
@@ -174,6 +200,36 @@ exports.getTransactionTypes = async function(callback) {
     });
     callback(result);
 };
+
+exports.getTransactions = async function(accountid, callback) {
+    console.log("db.getTransactions( " + accountid + " ) BEGIN");
+    const bigqueryClient = new BigQuery();
+    var query = "SELECT transaction_date, tt.name, amount FROM bankdata.transactions t, bankdata.transaction_type tt ";
+    query += " WHERE t.transaction_type_id = tt.transaction_type_id ";
+    query += " AND account_id = ";
+    query += accountid; 
+    query += " ORDER BY transaction_date";
+    const options = { query: query, location: 'US' };
+    const [job] = await bigqueryClient.createQueryJob(options);
+    console.log(`getAccounts(): Job ${job.id} started.`);
+    const [rows] = await job.getQueryResults();
+
+    var table = {};
+    var key = "data";
+    var array = [];
+    
+    try {
+        rows.forEach(row => {
+            array.push({date: row.transaction_date, type: row.name, amount: row.amount});
+        });
+        table[key] = array;
+        callback(table);    
+    } catch (error) {
+        console.error("getTransactions() ${error} ");
+        callback(" ");
+    }
+
+}
 
 exports.getAccounts = async function(callback) {
     console.log("db.getAccounts(): BEGIN");

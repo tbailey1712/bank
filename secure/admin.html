@@ -60,8 +60,8 @@
       
         <div id="page1">
           <h1 class="mt-3">Welcome to McDuck Savings and Loan</h1>
-          <p class="lead">Account Balance: $0.00</p>
-          <p class="lead">Interest Paid: $0.00</p>
+          <p class="lead">Account Balance: $<span id="txtBalance">0.00</span></p>
+          <p class="lead">Interest Paid: $<span id="txtInterest">0.00</span></p>
         </div>
       
         <div id="page2" class="jumbotron">
@@ -173,12 +173,8 @@
     <script src="https://code.jquery.com/jquery-3.2.1.min.js"  crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.bundle.js"  crossorigin="anonymous"></script> 
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.js"></script>
-    
-    
+        
     <script>
-
-
-
       console.log("Filling TransTypes");
       dropdown = $('#exampleFormControlSelect1');
       dropdown.empty();
@@ -191,6 +187,14 @@
           // <a class="dropdown-item" href="#">Action</a> 
           dropdown.append($('<option></option>').attr('value', entry.id).text(entry.name));
         })
+      });
+
+      console.log("Getting Balance/Interest");
+      $.getJSON('/balance', function (data) {
+        console.log("Balance returns " + data);        
+        var jsdata = JSON.parse(data);
+        $('#txtBalance').text( jsdata.balance );
+        $('#txtInterest').text( jsdata.interest );
       });
 
       console.log("Filling Accounts");

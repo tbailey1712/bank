@@ -18,7 +18,7 @@
 // [START gae_node_request_example]
 const express = require('express');
 var cookieParser = require('cookie-parser');
-var session = require('cookie-session');
+var session = require('express-session');
 
 const app = express();
 var path = require('path');
@@ -112,14 +112,16 @@ app.use(function (req, res, next) {
 
 app.get('/balance', (req,res) => {
     // check for API auth
+    console.log("/balance GET START");
 
     if (req.session.user && req.cookies.mcduck_bank) {
         var id = req.session.user.id;
-        db.getBalance( function(id, result) {
-            //res.setHeader('Content-Type', 'application/json');
-            res.send( result );
+        console.log("/balance for " + id);
+
+        db.getBalances( id, function(result) {
+            res.setHeader('Content-Type', 'application/json');
+            res.json( JSON.stringify(result) );
         });
-    
 
     } else {
         res.sendFile(path.join(__dirname + '/public/login.html'));
@@ -143,9 +145,6 @@ app.get('/transactiontypes', (req,res) => {
 app.get('/getaccounts', (req,res) => {
     // TODO check for API auth
     console.log("/accounttypes GET START");
-    /*res.setHeader('Content-Type', 'application/json');
-    var type = "[{ \"account\": 1,\"name\": \"McDuck\" },{\"id\": 2, \"name\": \"Pokey\"}]";
-    res.json(type);*/
     db.getAccounts( function(result) {
         res.setHeader('Content-Type', 'application/json');
         res.json( JSON.stringify(result.data) );
@@ -156,14 +155,6 @@ app.get('/getaccountstable', (req,res) => {
     // TODO check for API auth
     console.log("/accounttypestable GET START");
     res.setHeader('Content-Type', 'application/json');
-    
-    /*var table = {};
-    var key = "data";
-    var array = [];
-    array.push({account: "1", name: "McDuck", balance: "$51.50" });
-    array.push({account: "2", name: "Pokey", balance: "$4.20" });
-    table[key] = array;
-    res.json(table);*/
 
     db.getAccounts( function(result) {
         res.setHeader('Content-Type', 'application/json');
@@ -171,14 +162,19 @@ app.get('/getaccountstable', (req,res) => {
     }); 
 });
 
+app.get('/gettransactionstable', (req,res) => {
+    // TODO check for API auth
 
-app.get('/fakelogin', (req,res) => {
-    console.log("Creating a fake session for: " + req.body );
-    var userSession = "{\"id\": 0, \"name\":\"Admin\" }";
-    req.session.user = JSON.parse(userSession);
-    res.redirect("/");
+    var id = req.session.user.id;
+    console.log("/gettransactionstable GET START for account id=" + id);
+    res.setHeader('Content-Type', 'application/json');
 
+    db.getTransactions( id, function(result) {
+        res.setHeader('Content-Type', 'application/json');
+        res.json(result);
+    }); 
 });
+
 
 app.post('/login', urlencodedParser, function(req,res) {
     console.log("/login: POST START");

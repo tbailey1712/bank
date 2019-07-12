@@ -113,13 +113,14 @@
                     <th>Account Number</th>
                     <th>Name</th>
                     <th>Balance</th>
+                    <th>Last Login</th>
                 </tr>
             </thead>
             <tfoot>
                 <tr>
                     <th>Account Number</th>
                     <th>Name</th>
-                    <th>Balance</th>
+                    <th>Balance</th> 
                 </tr>
             </tfoot>
             <tbody>
@@ -221,13 +222,14 @@
             { "data": "name",
               "render": function(data, type, row, meta){
                 if(type === 'display'){
-                  console.log("Row: " + row + " Data: " + data);
-                  data = '<a href="' + data + '">' + data + '</a>';
+                  console.log("Row: " + JSON.stringify(row) + " Data: " + data);
+                  data = '<a href="/viewaccount?id=' + data + '">' + data + '</a>';
                 }
                 return data;
-            }
+              },
             },
-            { "data" : "balance"}
+            { "data" : "balance"},
+            { "data" : "last_login" }
           ]
           }); 
       } );

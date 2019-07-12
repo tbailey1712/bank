@@ -224,8 +224,9 @@ exports.getTransactions = async function(accountid, callback) {
         rows.forEach(row => {
 
             date = row.transaction_date;
-            fmtdate = format.asString('MM-dd-yyyy', date);
-            array.push({date: fmtdate, type: row.name, amount: row.amount});
+            //console.log("getTransactions() Row.date is " + date.value.substring(0, date.value.indexOf('T') ) ); // JSON.stringify(date));
+            fmtdate = date.value.substring(0, date.value.indexOf('T') );
+            array.push({date: fmtdate, type: row.name, balance: row.amount});
         });
         table[key] = array;
         callback(table);    
@@ -239,10 +240,15 @@ exports.getTransactions = async function(accountid, callback) {
 exports.getAccounts = async function(callback) {
     console.log("db.getAccounts(): BEGIN");
     const bigqueryClient = new BigQuery();
-    const query = "SELECT * FROM bankdata.accounts";
+    //const query = "SELECT * FROM bankdata.accounts";
+    var query = "SELECT account_id, name, last_login, (SELECT sum(amount) " +
+    " FROM bankdata.transactions as balance " +
+    " where account_id = a.account_id ) " +
+    " FROM bankdata.accounts a ";
+    
     const options = { query: query, location: 'US' };
     const [job] = await bigqueryClient.createQueryJob(options);
-    console.log(`getAccounts(): Job ${job.id} started.`);
+    console.log(`getAccounts(): Job ${job.id} started with ` + query);
     const [rows] = await job.getQueryResults();
 
     var table = {};
@@ -251,12 +257,16 @@ exports.getAccounts = async function(callback) {
     
     try {
         rows.forEach(row => {
-            array.push({account: row.account_id, name: row.name, balance: "TBD"});
+            date = row.last_login;
+            fmtdate = date.value.substring(0, date.value.indexOf('T'));
+            //console.log("getAccounts() Row: " + JSON.stringify(row) );
+            array.push({account: row.account_id, name: row.name, balance: row.f0_, last_login: fmtdate });
         });
         table[key] = array;
+        console.log("db.getAccounts() WithBal Returning: " + JSON.stringify(table));
         callback(table);    
     } catch (error) {
-        console.error("getAccounts() ${error} ");
+        console.error("getAccounts() error: " + error);
         callback(" ");
     }
 }

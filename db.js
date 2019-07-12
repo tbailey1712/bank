@@ -203,6 +203,8 @@ exports.getTransactionTypes = async function(callback) {
 
 exports.getTransactions = async function(accountid, callback) {
     console.log("db.getTransactions( " + accountid + " ) BEGIN");
+    
+    var format = require('date-format');
     const bigqueryClient = new BigQuery();
     var query = "SELECT transaction_date, tt.name, amount FROM bankdata.transactions t, bankdata.transaction_type tt ";
     query += " WHERE t.transaction_type_id = tt.transaction_type_id ";
@@ -220,12 +222,15 @@ exports.getTransactions = async function(accountid, callback) {
     
     try {
         rows.forEach(row => {
-            array.push({date: row.transaction_date, type: row.name, amount: row.amount});
+
+            date = row.transaction_date;
+            fmtdate = format.asString('MM-dd-yyyy', date);
+            array.push({date: fmtdate, type: row.name, amount: row.amount});
         });
         table[key] = array;
         callback(table);    
     } catch (error) {
-        console.error("getTransactions() ${error} ");
+        console.error("getTransactions() ERROR: " + error );
         callback(" ");
     }
 

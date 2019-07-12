@@ -1,7 +1,7 @@
 1. npm install
 2. npm start
 4. npm install --save @google-cloud/bigquery
-5. npm install --save body-parser cookie-parser cookie-session dateformat
+5. npm install --save body-parser cookie-parser cookie-session dateformat date-format
 
 gcloud app deploy
 

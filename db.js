@@ -48,6 +48,24 @@ exports.insertAccount = async function (row, callback) {
     console.log("db.insertAccount(): END");
 };
 
+exports.changepin = async function( id, pin, callback) {
+    console.log("db.changepin( " + id + ", " + pin + ") BEGIN");
+    
+    try {
+        const bigqueryClient = new BigQuery();
+        var query = "UPDATE bankdata.accounts set pin = " + pin + " WHERE account_id = " + id;
+        const options = { query: query, location: 'US' };
+        const [job] = await bigqueryClient.createQueryJob(options);
+        console.log(`db.changepin(): Job ${job.id} started. with query ${query}`);
+        const [rows] = await job.getQueryResults();
+        console.log("db.changepin(): " + JSON.stringify(rows));
+    
+    } catch (error) {
+        console.log("db.changepin() ERROR=" + error);
+        callback("ERROR");
+    }
+};
+
 exports.insertTransaction = async function (row, callback) {
     console.log("db.insertTransaction(): BEGIN with " +JSON.stringify(row) );
 

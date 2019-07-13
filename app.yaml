@@ -14,6 +14,11 @@
 # [START gae_quickstart_yaml]
 runtime: nodejs10
 
+env_variables:
+  SENDGRID_API_KEY : "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"
+  SENDGRID_SENDER : "bank@mcducklabs.com"
+
+
 #  - url: /public
 #    static_dir: public
 # [END gae_quickstart_yaml]

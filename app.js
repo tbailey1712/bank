@@ -41,6 +41,7 @@ app.use(session({
     }
 }));
 var db = require("./db.js");
+var mail = require("./mail.js");
 
 // This middleware will check if user's cookie is still saved in browser and user is not set, 
 // then automatically log the user out.
@@ -110,6 +111,23 @@ app.use(function (req, res, next) {
 });
 */
 
+app.get('/getsession', (req,res) => {
+    /// check for API auth
+    console.log("/getsession GET START");
+    if (req.session.user && req.cookies.mcduck_bank) {
+        var id = req.session.user.id;
+        console.log("/getsession for " + id);
+
+        db.getSessionDetails( id, function(result) {
+            res.setHeader('Content-Type', 'application/json');
+            res.json( JSON.stringify(result) );
+        });
+
+    } else {
+        res.sendFile(path.join(__dirname + '/public/login.html'));
+    }        
+});
+
 app.get('/balance', (req,res) => {
     // check for API auth
     console.log("/balance GET START");
@@ -175,6 +193,18 @@ app.get('/gettransactionstable', (req,res) => {
     }); 
 });
 
+app.get('/sendwelcomeemail', (req,res) => {
+    // TODO check for API auth
+    var id = req.session.user.id;
+    console.log("/sendwelcomeeail GET START");
+
+    var message = { to: "tony.bailey@gmail.com"};
+    
+    mail.sendWelcome(message, function(result) {
+        res.setHeader('Content-Type', 'application/json');
+        res.json(result);
+    });
+});
 
 app.post('/login', urlencodedParser, function(req,res) {
     console.log("/login: POST START");
@@ -194,6 +224,18 @@ app.post('/login', urlencodedParser, function(req,res) {
             res.redirect("/");
         }
     });   
+});
+
+app.post('/changepin', urlencodedParser, function(req,res) {
+    //api security here
+    console.log("/changepin: POST START");
+    var pin = req.body.pin;
+    var id = req.session.user.id;
+    console.log("/changepin: User=" + id + " New PIN=" + pin);
+    db.changepin(id, pin, function(result) {
+        console.log("/changepin DB returned: " + result);
+    });
+    res.redirect("/account?changepin=true");
 });
 
 app.post('/postTransaction', urlencodedParser, function(req,res) {

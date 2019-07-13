@@ -1,7 +1,7 @@
 1. npm install
 2. npm start
 4. npm install --save @google-cloud/bigquery
-5. npm install --save body-parser cookie-parser cookie-session dateformat date-format
+5. npm install --save body-parser cookie-parser cookie-session dateformat date-format sendgrid
 
 gcloud app deploy
 
@@ -18,7 +18,7 @@ bq load --source_format=CSV --skip_leading_rows=1 bankdata.accounts load_account
 bq load --source_format=CSV --skip_leading_rows=1 bankdata.transactions trans.csv transaction_id:INTEGER,account_id:INTEGER,transaction_type_id:INTEGER,amount:NUMERIC,transaction_date:DATETIME
 
 # TO-DO LIST
-- Config Object: Bank Name, 
+- Config Object: Bank Name, User Details
 - https://cloud.google.com/scheduler/
 - https://cloud.google.com/appengine/docs/standard/nodejs/sending-emails-with-sendgrid
 - https://console.cloud.google.com/marketplace/details/sendgrid-app/sendgrid-email?project=mcduck-bank&folder&organizationId

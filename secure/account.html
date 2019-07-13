@@ -72,7 +72,22 @@
             <tbody>
             </tbody>
         </table>
-      </div>
+      </div> <!-- Trans Table Div-->
+      <div>
+        <h3>Change your PIN number</h3>
+        <form class="form-newaccount" action="/changepin" method="POST" >
+        <div width="50%">
+            <div class="row">
+              <div class="col-md-2" align="center">
+                  <input type="text" id="pin" name="pin" class="form-control" placeholder="New PIN" required autofocus>
+              </div>
+              <div class="col-md-4">
+                  <button class="btn btn-primary" type="submit">Change PIN</button>      
+              </div>
+            </div> <!--row-->          
+          </div>
+        </form>
+      </div> <!-- Change PIN Div -->
     </main>
 
     <footer class="footer">

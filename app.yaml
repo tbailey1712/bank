@@ -15,7 +15,7 @@
 runtime: nodejs10
 
 env_variables:
-  SENDGRID_API_KEY : "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"
+  SENDGRID_API_KEY : "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"
   SENDGRID_SENDER : "bank@mcducklabs.com"
 
 

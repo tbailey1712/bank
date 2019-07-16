@@ -1,4 +1,6 @@
 const {BigQuery} = require('@google-cloud/bigquery');
+var mail = require("./mail.js");
+
 
 exports.sumTwo = function(){
     return 2+2; 
@@ -154,6 +156,50 @@ getNewTransactionID = async function(callback) {
  
 };
 
+exports.processInterestPayments = async function(callback) {
+
+    console.log("db.processInterestPayments(): BEGIN");
+    try {
+        // see if already ran this month
+
+        exports.getAccounts(function (result) {
+            console.log('processInterestPayments() getAccounts returned: ' + result);
+            
+            result.data.forEach(account => {
+                var account_id = account.account;
+                if (account_id != 0) {
+                    var balance = parseFloat(account.balance);
+                    var rate = 0.05;
+                    var interest = parseFloat((balance * rate).toFixed(2));
+    
+                    var newbalance = parseFloat( (balance + interest).toFixed(2) );
+                    console.log("processInterestPayments() User=" + account_id + " Balance=" + balance + " Interest=" + interest + " New Balance=" + newbalance );
+                    // insertTransaction
+                }
+            });
+
+            callback("Done");
+        });
+    } catch (error) {
+        console.error("db.processInterestPayments() ERROR: " + error);
+        callback("ERROR");
+    }
+}
+
+exports.sendStatements = async function(callback) {
+
+    var body = "=============\n" + 
+    "Welcome to McDuck Savings and Loan!\n" +
+    "Your account is now open\n";
+    
+    var message = { to: "tony.bailey@gmail.com", subject: "Welcome to McDuck Bank", body: body};
+
+    mail.sendWelcome(message, function(result) {
+        //
+    });
+    callback("DONE");
+}
+
 exports.getBalances = async function(account_id, callback) {
 
     console.log("db.getBalances(" + account_id + ") BEGIN");
@@ -259,7 +305,7 @@ exports.getAccounts = async function(callback) {
     console.log("db.getAccounts(): BEGIN");
     const bigqueryClient = new BigQuery();
     //const query = "SELECT * FROM bankdata.accounts";
-    var query = "SELECT account_id, name, last_login, (SELECT sum(amount) " +
+    var query = "SELECT account_id, name, email, last_login, (SELECT sum(amount) " +
     " FROM bankdata.transactions as balance " +
     " where account_id = a.account_id ) " +
     " FROM bankdata.accounts a ";
@@ -278,7 +324,7 @@ exports.getAccounts = async function(callback) {
             date = row.last_login;
             fmtdate = date.value.substring(0, date.value.indexOf('T'));
             //console.log("getAccounts() Row: " + JSON.stringify(row) );
-            array.push({account: row.account_id, name: row.name, balance: row.f0_, last_login: fmtdate });
+            array.push({account: row.account_id, name: row.name, email: row.email, balance: row.f0_, last_login: fmtdate });
         });
         table[key] = array;
         console.log("db.getAccounts() WithBal Returning: " + JSON.stringify(table));
@@ -286,6 +332,27 @@ exports.getAccounts = async function(callback) {
     } catch (error) {
         console.error("getAccounts() error: " + error);
         callback(" ");
+    }
+}
+
+updateLastLoginDate = async function(account_id, callback) {
+    var dateFormat = require('dateformat');
+    var day=dateFormat(new Date(), "yyyy-mm-dd");
+
+    console.log("db.updateLastLoginDate( " + account_id +  ") BEGIN");
+    
+    try {
+        const bigqueryClient = new BigQuery();
+        var query = "UPDATE bankdata.accounts set last_login = '" + day + "' WHERE account_id = " + account_id;
+        const options = { query: query, location: 'US' };
+        const [job] = await bigqueryClient.createQueryJob(options);
+        console.log(`db.updateLastLoginDate(): Job ${job.id} started. with query ${query}`);
+        const [rows] = await job.getQueryResults();
+        console.log("db.updateLastLoginDate(): " + JSON.stringify(rows));
+        callback("Updated");
+    } catch (error) {
+        console.log("db.changupdateLastLoginDateepin() ERROR=" + error);
+        callback("ERROR");
     }
 }
 
@@ -318,6 +385,10 @@ exports.validateLogin = async function(account, pin, callback) {
             console.log("validateLogin():" + row);
             if (row.pin == pin) {
                 console.log("validateLogin(): VALID LOGIN for " + account);
+
+                updateLastLoginDate(account, function (result) {
+                    console.log('validateLogin() Update Login Date returned: ' + result);
+                });
                 callback(true);
             } else {
                 console.log("validateLogin(): WRONG PIN for " + account);

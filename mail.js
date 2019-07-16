@@ -7,7 +7,7 @@ const Sendgrid = require('@sendgrid/client');
 
 Sendgrid.setApiKey(SENDGRID_API_KEY);
 
-exports.sendWelcome = function(message, callback) {
+exports.sendMessage = async function(message, callback) {
     const request = {
         method: 'POST',
         url: '/v3/mail/send',
@@ -15,14 +15,14 @@ exports.sendWelcome = function(message, callback) {
           personalizations: [
             {
               to: [{email: message.to}],
-              subject: 'Hello World!',
+              subject: message.subject,
             },
           ],
           from: {email: SENDGRID_SENDER},
           content: [
             {
               type: 'text/plain',
-              value: 'Sendgrid on Google App Engine with Node.js.',
+              value: message.body,
             },
           ],
         },

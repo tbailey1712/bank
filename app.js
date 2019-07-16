@@ -160,6 +160,19 @@ app.get('/transactiontypes', (req,res) => {
     });
 });
 
+app.get('/processinterestpayments', (req,res) => {
+    // check for API auth
+    console.log("/processInterestPayments GET START");
+    /*res.setHeader('Content-Type', 'application/json');
+    var type = "[{ \"id\": 0,\"name\": \"Deposit\" },{\"id\": 1, \"name\": \"Withdrawl\"}]";
+    res.json(type);*/
+
+    db.processInterestPayments( function(result) {
+        //res.setHeader('Content-Type', 'application/json');
+        res.send( result );
+    });
+});
+
 app.get('/getaccounts', (req,res) => {
     // TODO check for API auth
     console.log("/accounttypes GET START");
@@ -198,7 +211,11 @@ app.get('/sendwelcomeemail', (req,res) => {
     var id = req.session.user.id;
     console.log("/sendwelcomeeail GET START");
 
-    var message = { to: "tony.bailey@gmail.com"};
+    var body = "=============\n" + 
+            "Welcome to McDuck Savings and Loan!\n" +
+            "Your account is now open\n";
+            
+    var message = { to: "tony.bailey@gmail.com", subject: "Welcome to McDuck Bank", body: body};
     
     mail.sendWelcome(message, function(result) {
         res.setHeader('Content-Type', 'application/json');

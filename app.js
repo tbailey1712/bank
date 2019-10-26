@@ -41,7 +41,7 @@ app.use(session({
     }
 }));
 var db = require("./db.js");
-var mail = require("./mail.js");
+var mail = require("./mail.js")
 
 // This middleware will check if user's cookie is still saved in browser and user is not set, 
 // then automatically log the user out.
@@ -214,7 +214,7 @@ app.get('/sendwelcomeemail', (req,res) => {
     var body = "=============\n" + 
             "Welcome to McDuck Savings and Loan!\n" +
             "Your account is now open\n";
-            
+
     var message = { to: "tony.bailey@gmail.com", subject: "Welcome to McDuck Bank", body: body};
     
     mail.sendWelcome(message, function(result) {
@@ -326,7 +326,7 @@ app.get('/account', function(req, res) {
 // Start the server
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-  console.log(`App listening on port ${PORT}`);
+  console.log(`McDuck Savings & Loan: Customer Site listening on port ${PORT}`);
   console.log('Press Ctrl+C to quit.');
 });
 

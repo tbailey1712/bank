@@ -79,6 +79,8 @@ exports.insertTransaction = async function (row, callback) {
     // Insert data into a table
     try {
         var id = 0;
+
+        // May get same ID twice due to commit delays
         getNewTransactionID( function(result) { 
             id = result;
             if ( id == 0) {
@@ -175,6 +177,20 @@ exports.processInterestPayments = async function(callback) {
                     var newbalance = parseFloat( (balance + interest).toFixed(2) );
                     console.log("processInterestPayments() User=" + account_id + " Balance=" + balance + " Interest=" + interest + " New Balance=" + newbalance );
                     // insertTransaction
+
+                    var dateFormat = require('dateformat');
+                    var day=dateFormat(new Date(), "yyyy-mm-dd");
+                
+                    var row = [];
+                    row.push({"account_id": account_id,"transaction_date": day, "transaction_type_id": 4, "amount": interest});
+                
+                    exports.insertTransaction(row, function (result) {
+                        console.log('processInterestPayments(): insertTransaction returned: ' + result);
+                        sendInterestPaidEmail(account_id, interest, newbalance, function(emailresult) {
+                            console.log('processInterestPayments(): sendInterestPaidEmail returned: ' + result);
+                        });
+                    });
+                
                 }
             });
 
@@ -186,6 +202,25 @@ exports.processInterestPayments = async function(callback) {
     }
 }
 
+
+sendInterestPaidEmail = async function(account_id, interest, newbalance, callback) {
+    console.log("sendInterestPaidEmail(" + account_id + "): BEGIN");
+
+    getAccountDetails(account_id, function(result) {
+        console.log("sendInterestPaidEmail() Emailing " + result.email);
+        var body = "Dear " + result.name + ", \r\n" + 
+        "You have received an interest payment of $" + interest + " \r\n" +
+        "Your new balance is $" + newbalance + " \r\n";
+        
+        var message = { to: result.email, subject: "McDuck Savings and Loan: Interest Payment", body: body};
+    
+        mail.sendMessage(message, function(result) {
+            console.log("sendInterestPaidEmail(): Message Sent");
+        });
+        callback("DONE");    
+    });
+};
+
 exports.sendStatements = async function(callback) {
 
     var body = "=============\n" + 
@@ -194,7 +229,7 @@ exports.sendStatements = async function(callback) {
     
     var message = { to: "tony.bailey@gmail.com", subject: "Welcome to McDuck Bank", body: body};
 
-    mail.sendWelcome(message, function(result) {
+    mail.sendMessage(message, function(result) {
         //
     });
     callback("DONE");
@@ -300,6 +335,34 @@ exports.getTransactions = async function(accountid, callback) {
     }
 
 }
+
+getAccountDetails = async function(account_id, callback) {
+    console.log("db.getAccountDetails(" + account_id + "): BEGIN");
+    const bigqueryClient = new BigQuery();
+    //const query = "SELECT * FROM bankdata.accounts";
+    var query = "SELECT account_id, name, email, last_login " +
+    " FROM bankdata.accounts " +
+    " where account_id = " + account_id;
+    
+    const options = { query: query, location: 'US' };
+    const [job] = await bigqueryClient.createQueryJob(options);
+    console.log(`getAccountDetails(): Job ${job.id} started with ` + query);
+    const [rows] = await job.getQueryResults();
+
+    if (rows.length == 0) {
+        console.log("getAccountDetails(): NO ACCOUNT EXISTS for " + account_id);
+        callback("ERROR");
+    } else {
+        console.log("getAccountDetails(" + account_id + "): Found Rows: " + rows.length );
+        var row = rows[0];
+        
+        console.log("getAccountDetails(" + account_id + "):" + JSON.stringify(row));
+        callback({name: row.name, email: row.email});
+        
+    }
+
+};
+
 
 exports.getAccounts = async function(callback) {
     console.log("db.getAccounts(): BEGIN");

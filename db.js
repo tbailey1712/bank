@@ -171,7 +171,7 @@ exports.processInterestPayments = async function(callback) {
                 var account_id = account.account;
                 if (account_id != 0) {
                     var balance = parseFloat(account.balance);
-                    var rate = 0.05;
+                    var rate = 0.015;
                     var interest = parseFloat((balance * rate).toFixed(2));
     
                     var newbalance = parseFloat( (balance + interest).toFixed(2) );

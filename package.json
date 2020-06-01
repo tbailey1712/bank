@@ -42,5 +42,6 @@
     },
     "requiresKeyFile": true,
     "requiresProjectId": true
-  }
+  },
+  "main": "app.js"
 }
